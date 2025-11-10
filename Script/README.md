@@ -64,9 +64,84 @@
 
 # 모델 설계
 
+- 모델 선택
+
+주어진 task는 문장을 전부 입력 받아서 특정 분류의 class로 반환해아 합니다. Transformer 모델은 NLP에서 문장의 길이에 의존하지 않고 좋은 결과를 반환하는 모델입니다. 따라서, 저희는 gradient vanishing, long term dependancy 문제에서 벗어나고자 transformer 모델을 선택하였습니다. Transformer 모델은 BERT와 같은 encoder 기반의 모델과 GPT와 같은 decoder 기반의 모델이 있습니다. 이 부분에 있어서 pretrained 되지 않은 모델의 비교에서 decoder 모델보다 encoder 모델이 더욱 뛰어난 성능을 보여줬음으로 decoder 모델을 패기 하고 encoder 모델을 선택하였습니다.
+
+| 모델 타입 | f1 | 
+|---|---|
+| **Encoder Base** |0.98|
+| **Decoder Base** |0.81|
+
+이때, 저희는 중요한 맥락을 보면 좋겠다고 생각하였습니다. 다음과 같은 예시를 보면 일반적인 대화와 위협 대화 중 구분하기 힘든 대화들이 존재합니다.
+
+| class | conversation | 
+|---|---|
+| **직장 내 괴롭힘 대화** |한주씨 주말에 뭐해?<br>아 대구 본가 내려갑니다<br>아그래? 잘됏다 우리집도 그쪽이거든 거창 알아?<br>아네 알아요<br>그럼 주말에 오가면서 나좀 태워서 가<br>네??<br>나도 집에 갈일있어서<br>아 차에 카시트랑 짐이랑 너무 많아서 자리가 없는데<br>좀 치우고 불편하게 가면되지 대신 이야기하면서 재밌게 가면되잖아?<br>아. 와이프랑 애들이 불편할것같은데<br>내가 더불편하지 가족들 사이에 낀거니까 그렇지?<br>아.네.<br>그날보게<br>|
+| **일상대화** |교수님, 질문 있습니다!<br>네, 학생. 뭐죠?<br>이번 과제... 주제가... 너무... 어렵습니다.<br>어렵다고요? 뭐가 어렵죠?<br>너무... 포괄적입니다! 좀... 좁혀주시면 안 될까요?<br>하하. 원래 그런 의도였습니다. 알아서들 해보세요.<br>아...<br>이상. 다음.<br>...교수님... 밉다.<br>...|
+| **일상대화** |야, 시험 개망함.<br>나도. 한 문제도 모르겠더라. ㅅㅂ.<br>교수님 왜 저러시냐. 미친 듯.<br>ㄹㅇ. 이거 재수강 각임?<br>아... 밥맛 떨어진다.<br>술이나 마시러 가자.<br>콜. 오늘은 마셔야겠다.<br>가자. 쏘주 ㄱ.<br>ㅇㅋ.<br>짠.|
+
+
+이러한 위협 문장은 시각에 따라서 달라 질 수 있으나 대화 당사자 기준으로 볼 시 일상 대화가 될 수 있습니다.
+
+- 모델 architecture
+
+모델의 architecture는 이전에도 언급하였듯이 BERT의 encoder 모델을 사용하였습니다. Masked Multi-Head attention이 효율적이지 못한 측면도 있고 실험 결과적으로 encoder base 모델이 더 나은 성능을 보여주었습니다.
+
+<img src="/img/img04.png" width="600px" height="800px"></img>
+
+
+- Activation Funciton
+
+ReLU의 경우 Dead Neuran 문제 때문에 일부 node 에서 계산이 되지 않는 문제가 발생할 수 있습니다. 따라서, 더 효율적인 activation function인 SiLU를 사용하였습니다.
+
+<img src="/img/img05.png" width="600px" height="360px"></img>
+
+- Positional Embedding
+
+Positional embedding의 경우 absolute positional encoding의 sinous positinal encoding 대신 RoPE를 사용하여 단어의 상대적인 위치를 알 수 있게 하였습니다. RoPE의 경우 Q vector와 K vector를 회전시켜 
+
 # 시도 방법
 
+- 기본 적인 목표 달성을 위하여 BERT 모델을 pretarin 과정 없이 text classification에 맞춰서 모델을 설계
+
+   - 결과:
+     | model | f1 | 
+     |---|---|
+     |basic|0.48|
+
+- 일상 대화에 대한 구분 능력이 부족한 것 같아 \<mask> token을 도입
+
+   - 결과:
+     basic과 성능에 크게 변화가 없어 측정 하지 않음
+
+- Vocabulary size 증가
+
+   - 결과:
+     | model | f1 | 
+     |---|---|
+     |vocab_size_16384|0.67|
+- 일상 대화 데이터량 증가
+
+  - 결과:
+    실험시간이 오래걸려 끝마치지 못함
+    
+- 전체 데이터량을 augmentation으로 50,000개 까지 증가
+
+  - 결과:
+    실험시간이 오래걸려 끝마치지 못함
+    
+- Auxiliary loss의 objective 수정. BERT와 같이 auxiliary loss를 \<mask> 된 문장을 입력 받아서 원래 문장을 맞추는 task로 변경
+
+  - 결과:
+     | model | f1 | 
+     |---|---|
+     |vocab_size_16384|0.68|
+
+# 실수
+
+- mask를 구현할 때 for 문 밖으로 빼지 random하게 선택 된 마지막 index만 mask 처리 되고 있었음
+- padding mask를 마지막 layer에 넣어줄 때 padding을 고려하지 않았음
 
 # 결론
-
 
