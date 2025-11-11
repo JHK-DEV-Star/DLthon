@@ -138,9 +138,13 @@ Positional embedding의 경우 absolute positional encoding의 sinous positinal 
      |---|---|
      |vocab_size_16384|0.68|
 
-- Pre-Normalization 사용, GLU 구조 사용
+- Pre-Normalization 사용, GLU 구조 사용, 잘못된 RoPE 변경
 
-   -결과: 
+   -결과:
+    적은 학습량으로 이전과 같거나 비슷한 성능. 아직 hyperparameter 수정이 끝나지 않음
+     | model | f1 | 
+     |---|---|
+     |model_revision|0.67|
 
 # 실수
 
@@ -150,4 +154,8 @@ Positional embedding의 경우 absolute positional encoding의 sinous positinal 
 - 실수를 바로 잡고 모델을 돌려 본 결과 학습 데이터의 분포를 잘 학습하는 것을 확인하여 학습 데이터의 비율이 정 비율일 때 가장 효율이 좋다는 것을 알게 되었음
 
 # 결론
+- augmentation을 한 후 validation set을 랜덤하게 나누면서 정보가 유출되어 학습 시 충분히 학습하지 못하였거나 과하게 학습했을 가능성이 있습니다.
 
+- Pre-Normalization, RoPE, SwiGLU 등의 구조를 encoder base 의 transformer에 적용했을 때 확실히 모델의 성능이 증가하였습니다.
+
+- 중간 실수로 인한 실험 시간 지연으로 추가적인 hyperparameter tunning에 대한 실험이 필요합니다.
