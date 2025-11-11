@@ -93,13 +93,13 @@
 
 - Activation Funciton
 
-ReLU의 경우 Dead Neuran 문제 때문에 일부 node 에서 계산이 되지 않는 문제가 발생할 수 있습니다. 따라서, 더 효율적인 activation function인 SiLU를 사용하였습니다.
+ReLU의 경우 Dead Neuran 문제 때문에 일부 node 에서 계산이 되지 않는 문제가 발생할 수 있습니다. 따라서, 더 효율적인 activation function인 SiLU를 사용하였습니다. 이는 GELU와 비슷한 성능을 내면서 기존의 다른 activation funciton이 갖고 있는 여러 문제점들을 해결하였습니다.
 
 <img src="/img/img05.png" width="600px" height="360px"></img>
 
 - Positional Embedding
 
-Positional embedding의 경우 absolute positional encoding의 sinous positinal encoding 대신 RoPE를 사용하여 단어의 상대적인 위치를 알 수 있게 하였습니다. RoPE의 경우 Q vector와 K vector를 회전시켜 
+Positional embedding의 경우 absolute positional encoding의 sinous positinal encoding 대신 RoPE를 사용하여 단어의 상대적인 위치를 알 수 있게 하였습니다. RoPE의 경우 Q vector와 K vector를 회전시켜 그 위치를 기억함으로 같은 token이라도 위치가 다르면 회전값이 다르기 때문에 다른 값을 갖게 됩니다.
 
 # 시도 방법
 
@@ -138,10 +138,16 @@ Positional embedding의 경우 absolute positional encoding의 sinous positinal 
      |---|---|
      |vocab_size_16384|0.68|
 
+- Pre-Normalization 사용, GLU 구조 사용
+
+   -결과: 
+
 # 실수
 
 - mask를 구현할 때 for 문 밖으로 빼지 random하게 선택 된 마지막 index만 mask 처리 되고 있었음
 - padding mask를 마지막 layer에 넣어줄 때 padding을 고려하지 않았음
+- RoPE 구현할 때 실수가 너무 많았음
+- 실수를 바로 잡고 모델을 돌려 본 결과 학습 데이터의 분포를 잘 학습하는 것을 확인하여 학습 데이터의 비율이 정 비율일 때 가장 효율이 좋다는 것을 알게 되었음
 
 # 결론
 
